@@ -68,6 +68,173 @@
   </div>
 </dialog>
 
+
+
+<script>
+/**
+ * CartDrawer - Client-Side Cart Management
+ * 
+ * Handles dynamic cart loading, quantity updates, and discount calculations.
+ * All data is fetched from the FastAPI backend and rendered client-side.
+ * 
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+  
+  /**
+   * Loads cart data from backend and renders the cart items
+   * 
+   * Fetches annotated cart data including discounts and renders all items
+   * with their quantities, prices, and discount information. Updates the
+   * subtotal and discount summary sections.
+   * 
+   * @async
+   * @function loadCart
+   * @returns {Promise<void>}
+   * @throws {Error} If API call fails or data parsing fails
+   * @example
+   * // Load and display current cart
+   * await loadCart();
+   */
+  async function loadCart() {
+    try {
+      // Fetch annotated cart data from FastAPI backend
+      const res = await fetch('http://localhost:8000/cart/annotated');
+      const data = await res.json();
+      
+      // Get cart items container and render items with innerHTML
+      const container = document.getElementById('cart-items-list');
+      container.innerHTML = data.items.map(item => `
+        <li class="cart-item" data-product-id="${item.productId}">
+          <div class="item-image">
+            <img src="/assets/product-1.png" alt="Product image" />
+          </div>
+          <div class="item-details">
+            <div>
+              <div class="item-header">
+                <h3><a href="#">${item.name || item.productId}</a></h3>
+                <p class="item-price">${item.unit_price.toFixed(2)} €</p>
+              </div>
+              <p class="item-variant">${item.category || '—'} ${item.rabatt ? '• Rabattfähig' : ''}</p>
+            </div>
+            <div class="item-footer">
+              <div class="quantity-controls">
+                <button type="button" class="quantity-btn" data-action="decrease" data-product-id="${item.productId}">-</button>
+                <span class="item-quantity">Qty ${item.quantity}</span>
+                <button type="button" class="quantity-btn" data-action="increase" data-product-id="${item.productId}">+</button>
+              </div>
+              <div class="item-actions">
+                <button type="button" class="remove-button" data-action="remove" data-product-id="${item.productId}">Remove</button>
+              </div>
+            </div>
+            <div class="line-total">
+              <p class="original-total">Summe: ${item.line_total.toFixed(2)} €</p>
+              ${item.rabatt && item.line_total_discounted < item.line_total ? `
+                <div class="discount-info">
+                  <p class="discounted-total">Rabattpreis: ${item.line_total_discounted.toFixed(2)} €</p>
+                  <p class="savings">Ersparnis: ${item.savings_total.toFixed(2)} €</p>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        </li>
+      `).join('');
+      
+      // Update subtotal display
+      document.getElementById('subtotal-amount').textContent = `${data.subtotal.toFixed(2)} €`;
+      
+      // Handle discount summary visibility and values
+      const discountSummary = document.getElementById('discount-summary');
+      const hasDiscounts = data.items.some(item => item.rabatt && item.savings_total > 0);
+      
+      if (hasDiscounts) {
+        discountSummary.style.display = 'block';
+        document.getElementById('subtotal-discounted-amount').textContent = `${data.subtotal_discounted.toFixed(2)} €`;
+        document.getElementById('total-savings-amount').textContent = `${data.total_savings.toFixed(2)} €`;
+      } else {
+        discountSummary.style.display = 'none';
+      }
+      
+    } catch (err) {
+      console.error("Fehler beim Laden des Warenkorbs:", err);
+    }
+  }
+
+  /**
+   * Update product quantity in backend
+   * 
+   * Backend macht alle Berechnungen - Frontend nur API-Calls
+   * 
+   * @async
+   * @function updateProductQuantity
+   * @param {string} productId - The product ID to update
+   * @param {string} action - The action ('increase', 'decrease', 'remove')
+   * @returns {Promise<void>}
+   * @throws {Error} If API call fails
+   */
+  async function updateProductQuantity(productId, action) {
+    // Aktuelle Menge holen
+    const cartResponse = await fetch('http://localhost:8000/cart');
+    const cart = await cartResponse.json();
+    const item = cart.items.find(i => i.productId === productId);
+    const currentQuantity = item?.quantity || 0;
+    
+    let newQuantity = currentQuantity;
+    if (action === 'increase') {
+      newQuantity = currentQuantity + 1;
+    } else if (action === 'decrease') {
+      newQuantity = Math.max(0, currentQuantity - 1);
+    } else if (action === 'remove') {
+      newQuantity = 0;
+    }
+    
+    // Backend macht alle Berechnungen - nur Menge setzen
+    await fetch(`http://localhost:8000/cart/items/${productId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantity: newQuantity })
+    });
+  }
+
+  // Initialize cart on page load
+  loadCart();
+
+  /**
+   * Event listener for external cart updates
+   * 
+   * Listens for 'cartUpdated' events from other components (like ProductSection)
+   * and reloads the cart to reflect changes.
+   */
+  window.addEventListener('cartUpdated', loadCart);
+
+  /**
+   * Event listener for cart item interactions
+   * 
+   * Handles clicks on quantity buttons (+/-) and remove buttons.
+   * Updates the backend and refreshes the cart display without
+   * closing the drawer.
+   * 
+   * @param {Event} e - The click event
+   */
+  document.addEventListener('click', async (e) => {
+    // Check if clicked element is a cart control button
+    if (e.target.classList.contains('quantity-btn') || e.target.classList.contains('remove-button')) {
+      const productId = e.target.dataset.productId;
+      const action = e.target.dataset.action;
+      
+      
+      await updateProductQuantity(productId, action);
+      
+      // Reload cart display (drawer stays open)
+      loadCart();
+    }
+  });
+
+});
+</script>
+
+<script src="../scripts/cartDrawer.js"></script>
+
 <style>
 /* Global styles für dynamisch eingefügtes HTML */
 :global(.cart-item) {
@@ -642,171 +809,3 @@
   color: #4338ca;
 }
 </style>
-
-<script>
-/**
- * CartDrawer - Client-Side Cart Management
- * 
- * Handles dynamic cart loading, quantity updates, and discount calculations.
- * All data is fetched from the FastAPI backend and rendered client-side.
- * 
- * @author Novafon Development Team
- * @version 1.0.0
- */
-
-document.addEventListener('DOMContentLoaded', () => {
-  
-  /**
-   * Loads cart data from backend and renders the cart items
-   * 
-   * Fetches annotated cart data including discounts and renders all items
-   * with their quantities, prices, and discount information. Updates the
-   * subtotal and discount summary sections.
-   * 
-   * @async
-   * @function loadCart
-   * @returns {Promise<void>}
-   * @throws {Error} If API call fails or data parsing fails
-   * @example
-   * // Load and display current cart
-   * await loadCart();
-   */
-  async function loadCart() {
-    try {
-      // Fetch annotated cart data from FastAPI backend
-      const res = await fetch('http://localhost:8000/cart/annotated');
-      const data = await res.json();
-      
-      // Get cart items container and render items with innerHTML
-      const container = document.getElementById('cart-items-list');
-      container.innerHTML = data.items.map(item => `
-        <li class="cart-item" data-product-id="${item.productId}">
-          <div class="item-image">
-            <img src="/assets/product-1.png" alt="Product image" />
-          </div>
-          <div class="item-details">
-            <div>
-              <div class="item-header">
-                <h3><a href="#">${item.name || item.productId}</a></h3>
-                <p class="item-price">${item.unit_price.toFixed(2)} €</p>
-              </div>
-              <p class="item-variant">${item.category || '—'} ${item.rabatt ? '• Rabattfähig' : ''}</p>
-            </div>
-            <div class="item-footer">
-              <div class="quantity-controls">
-                <button type="button" class="quantity-btn" data-action="decrease" data-product-id="${item.productId}">-</button>
-                <span class="item-quantity">Qty ${item.quantity}</span>
-                <button type="button" class="quantity-btn" data-action="increase" data-product-id="${item.productId}">+</button>
-              </div>
-              <div class="item-actions">
-                <button type="button" class="remove-button" data-action="remove" data-product-id="${item.productId}">Remove</button>
-              </div>
-            </div>
-            <div class="line-total">
-              <p class="original-total">Summe: ${item.line_total.toFixed(2)} €</p>
-              ${item.rabatt && item.line_total_discounted < item.line_total ? `
-                <div class="discount-info">
-                  <p class="discounted-total">Rabattpreis: ${item.line_total_discounted.toFixed(2)} €</p>
-                  <p class="savings">Ersparnis: ${item.savings_total.toFixed(2)} €</p>
-                </div>
-              ` : ''}
-            </div>
-          </div>
-        </li>
-      `).join('');
-      
-      // Update subtotal display
-      document.getElementById('subtotal-amount').textContent = `${data.subtotal.toFixed(2)} €`;
-      
-      // Handle discount summary visibility and values
-      const discountSummary = document.getElementById('discount-summary');
-      const hasDiscounts = data.items.some(item => item.rabatt && item.savings_total > 0);
-      
-      if (hasDiscounts) {
-        discountSummary.style.display = 'block';
-        document.getElementById('subtotal-discounted-amount').textContent = `${data.subtotal_discounted.toFixed(2)} €`;
-        document.getElementById('total-savings-amount').textContent = `${data.total_savings.toFixed(2)} €`;
-      } else {
-        discountSummary.style.display = 'none';
-      }
-      
-    } catch (err) {
-      console.error("Fehler beim Laden des Warenkorbs:", err);
-    }
-  }
-
-  /**
-   * Update product quantity in backend
-   * 
-   * Backend macht alle Berechnungen - Frontend nur API-Calls
-   * 
-   * @async
-   * @function updateProductQuantity
-   * @param {string} productId - The product ID to update
-   * @param {string} action - The action ('increase', 'decrease', 'remove')
-   * @returns {Promise<void>}
-   * @throws {Error} If API call fails
-   */
-  async function updateProductQuantity(productId, action) {
-    // Aktuelle Menge holen
-    const cartResponse = await fetch('http://localhost:8000/cart');
-    const cart = await cartResponse.json();
-    const item = cart.items.find(i => i.productId === productId);
-    const currentQuantity = item?.quantity || 0;
-    
-    let newQuantity = currentQuantity;
-    if (action === 'increase') {
-      newQuantity = currentQuantity + 1;
-    } else if (action === 'decrease') {
-      newQuantity = Math.max(0, currentQuantity - 1);
-    } else if (action === 'remove') {
-      newQuantity = 0;
-    }
-    
-    // Backend macht alle Berechnungen - nur Menge setzen
-    await fetch(`http://localhost:8000/cart/items/${productId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ quantity: newQuantity })
-    });
-  }
-
-  // Initialize cart on page load
-  loadCart();
-
-  /**
-   * Event listener for external cart updates
-   * 
-   * Listens for 'cartUpdated' events from other components (like ProductSection)
-   * and reloads the cart to reflect changes.
-   */
-  window.addEventListener('cartUpdated', loadCart);
-
-  /**
-   * Event listener for cart item interactions
-   * 
-   * Handles clicks on quantity buttons (+/-) and remove buttons.
-   * Updates the backend and refreshes the cart display without
-   * closing the drawer.
-   * 
-   * @param {Event} e - The click event
-   */
-  document.addEventListener('click', async (e) => {
-    // Check if clicked element is a cart control button
-    if (e.target.classList.contains('quantity-btn') || e.target.classList.contains('remove-button')) {
-      const productId = e.target.dataset.productId;
-      const action = e.target.dataset.action;
-      
-      // Backend macht alles - nur API-Call
-      await updateProductQuantity(productId, action);
-      
-      // Reload cart display (drawer stays open)
-      loadCart();
-    }
-  });
-
-});
-</script>
-
-<script src="../scripts/cartDrawer.js"></script>
-
