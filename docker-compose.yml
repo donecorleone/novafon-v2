@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  novafon-app:
+    build: .
+    ports:
+      - "8000:8000"  # Backend
+      - "4321:4321"  # Frontend (if needed)
+    volumes:
+      - ./data:/app/data  # Mount data directory for persistence
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/products"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

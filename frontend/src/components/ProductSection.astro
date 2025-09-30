@@ -50,6 +50,11 @@ try {
   </div>
 </div>
 
+<a href="/easteregg">
+  <div class="easter-egg">
+    <img src="/assets/egg.png" alt="">
+  </div>
+</a>
 <script>
 /**
  * ProductSection - Product Display and Cart Management
@@ -195,5 +200,18 @@ document.addEventListener('DOMContentLoaded', () => {
     .product {
       max-width: 370px;
     }
+  }
+
+  .easter-egg {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    margin-left: 10px;
+    margin-bottom: 10px;
+  }
+
+  .easter-egg img {
+    height: 40px;
+    width: 40px;  
   }
 </style>

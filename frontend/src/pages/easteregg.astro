@@ -1,0 +1,119 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Fiber from '../components/Fiber.jsx';
+
+
+
+---
+
+<Layout title="EasterEgg">
+	<main>
+		
+		<div class="fiber-container w-full h-screen">
+			<Fiber client:load />
+		</div>
+		<div class="w-full h-[130vh] bg-green-500"></div>
+	</main>
+</Layout>
+
+<style is:inline>
+	main {
+		margin: 0;
+		padding: 0;
+		
+	}
+
+	.fiber-container {
+		background-image: linear-gradient(to top, #bdc2c9, #ced1d6, #dfe0e4, #efeff1, #ffffff);
+	}
+
+   
+	html,
+	body,
+	#root
+	{
+		
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		overflow: hidden;
+	}
+
+	body {
+		margin: 0;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		color: #000000;
+	}
+
+	html.lenis, html.lenis body {
+		height: auto;
+	}
+
+	.lenis.lenis-smooth {
+		scroll-behavior: auto !important;
+	}
+
+	.lenis.lenis-smooth [data-lenis-prevent] {
+		overscroll-behavior: contain;
+	}
+
+	.lenis.lenis-stopped {
+		overflow: hidden;
+	}
+
+	.lenis.lenis-smooth iframe {
+		pointer-events: none;
+	}
+
+	h1,h2,h3,h4,h5 {
+		text-transform: uppercase;
+		letter-spacing: 1.03px;
+		line-height: 1.2em;
+	}
+
+	h1 {
+		background: -webkit-linear-gradient(0deg,#313131, rgb(29, 29, 29),#252525,#2a3a3f);
+		background-size: auto;
+		background-clip: border-box;
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-size: 100% 100% !important;
+	}
+
+	h2 {
+		background: -webkit-linear-gradient(0deg,#222222, rgb(29, 29, 29),#272727,#2a3a3f);
+		background-size: auto;
+		background-clip: border-box;
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-size: 100% 100% !important;
+		font-size: 40px;
+	}
+
+	p {
+		font-size: 20px;
+		line-height: 1.4em;
+	}
+
+	button {
+		background: transparent ;
+		display: inline-block;
+		box-shadow: none;
+		text-transform: uppercase;
+		font-size: 16px;
+		letter-spacing: 3px;
+		line-height: 1.4em;
+		border: 1px solid #000000;
+		color: #000000;
+		padding: 14px 40px;
+		border-radius: 3px;
+		margin-top: 20px;
+	}
+
+	.row {
+		width: 100%;
+		padding: 0 40px;
+	}
+</style>
