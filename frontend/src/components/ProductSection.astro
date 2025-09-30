@@ -61,6 +61,9 @@ try {
 
 document.addEventListener('DOMContentLoaded', () => {
   
+  // Get customer ID from global variable (set by customerId.js)
+  let customerId = window.customerId || "C1001";
+  
   /**
    * Display discount prices from backend
    * 
@@ -77,8 +80,8 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   async function showDiscounts() {
     try {
-      // Fetch annotated cart data - backend calculates discounted_unit_price for all products
-      const response = await fetch('http://localhost:8000/cart/annotated');
+      // Fetch annotated cart data with customer ID
+      const response = await fetch(`http://localhost:8000/cart/annotated?customer_id=${customerId}`);
       const data = await response.json();
       
       // Iterate through all items and display discount prices
@@ -115,13 +118,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     try {
       // Get current quantity and add 1
-      const cartResponse = await fetch('http://localhost:8000/cart');
+      const cartResponse = await fetch(`http://localhost:8000/cart?customer_id=${customerId}`);
       const cart = await cartResponse.json();
       const existingItem = cart.items.find(item => item.productId === productId);
       const newQuantity = existingItem ? existingItem.quantity + 1 : 1;
 
-      // Backend performs all calculations - only set quantity
-      await fetch(`http://localhost:8000/cart/items/${productId}`, {
+      // Backend performs all calculations - only set quantity with customer ID
+      await fetch(`http://localhost:8000/cart/items/${productId}?customer_id=${customerId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quantity: newQuantity })

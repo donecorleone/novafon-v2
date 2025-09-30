@@ -81,6 +81,9 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   
+  // Get customer ID from global variable (set by ProductSection)
+  let customerId = window.customerId || "C1001";
+  
   /**
    * Loads cart data from backend and renders the cart items
    * 
@@ -98,8 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   async function loadCart() {
     try {
-      // Fetch annotated cart data from FastAPI backend
-      const res = await fetch('http://localhost:8000/cart/annotated');
+      // Fetch annotated cart data from FastAPI backend with customer ID
+      const res = await fetch(`http://localhost:8000/cart/annotated?customer_id=${customerId}`);
       const data = await res.json();
       
       // Get cart items container and render items with innerHTML
@@ -173,8 +176,8 @@ document.addEventListener('DOMContentLoaded', () => {
    * @throws {Error} If API call fails
    */
   async function updateProductQuantity(productId, action) {
-    // Aktuelle Menge holen
-    const cartResponse = await fetch('http://localhost:8000/cart');
+    // Aktuelle Menge holen mit customer ID
+    const cartResponse = await fetch(`http://localhost:8000/cart?customer_id=${customerId}`);
     const cart = await cartResponse.json();
     const item = cart.items.find(i => i.productId === productId);
     const currentQuantity = item?.quantity || 0;
@@ -188,8 +191,8 @@ document.addEventListener('DOMContentLoaded', () => {
       newQuantity = 0;
     }
     
-    // Backend macht alle Berechnungen - nur Menge setzen
-    await fetch(`http://localhost:8000/cart/items/${productId}`, {
+    // Backend macht alle Berechnungen - nur Menge setzen mit customer ID
+    await fetch(`http://localhost:8000/cart/items/${productId}?customer_id=${customerId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ quantity: newQuantity })
