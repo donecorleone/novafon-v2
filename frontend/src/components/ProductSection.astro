@@ -1,17 +1,21 @@
 ---
+// Einfach: Backend-Daten laden und mappen
 let products = [];
 
-const response = await fetch('http://localhost:8000/products');
-const data = await response.json();
-products = data.map(([_, productId, name, category, stock, price]) => ({
-  productId,
-  name,
-  category,
-  stock,
-  price
-}));
-
-
+try {
+  const response = await fetch('http://localhost:8000/products');
+  const data = await response.json();
+  products = data.map(([_, productId, name, category, stock, price]) => ({
+    productId,
+    name,
+    category,
+    stock,
+    price
+  }));
+} catch (error) {
+  console.error('Fehler beim Laden der Produkte:', error);
+  products = [];
+}
 ---
 
 <div class="w-full min-h-screen flex justify-center items-center">
@@ -47,76 +51,65 @@ products = data.map(([_, productId, name, category, stock, price]) => ({
 </div>
 
 <script>
+// Super einfach: Nur Buy-Button funktionalität
 document.addEventListener('DOMContentLoaded', () => {
-  async function loadCart() {
+  
+  // Rabattpreise anzeigen (vom Backend)
+  async function showDiscounts() {
     try {
-      const res = await fetch('http://localhost:8000/cart');
-      if (!res.ok) return null;
-      return await res.json();
-    } catch (err) {
-      console.error('Fehler beim Laden des Warenkorbs:', err);
-      return null;
+      const response = await fetch('http://localhost:8000/cart/annotated');
+      const data = await response.json();
+      
+      data.items.forEach(item => {
+        const discountEl = document.getElementById(`discount-${item.productId}`);
+        if (discountEl && item.rabatt && item.discounted_unit_price < item.unit_price) {
+          discountEl.textContent = `${item.discounted_unit_price.toFixed(2)} € (Treuebonus)`;
+          discountEl.style.display = 'block';
+          discountEl.style.color = '#dc2626';
+          discountEl.style.fontWeight = 'bold';
+        }
+      });
+    } catch (error) {
+      console.error('Fehler beim Laden der Rabatte:', error);
     }
   }
 
-  async function loadAnnotatedCart() {
-    try {
-      const res = await fetch('http://localhost:8000/cart/annotated');
-      if (!res.ok) return null;
-      return await res.json();
-    } catch (err) {
-      console.error('Fehler beim Laden des annotierten Warenkorbs:', err);
-      return null;
-    }
-  }
+  // Rabatte beim Laden anzeigen
+  showDiscounts();
 
-  // Live Rabattpreise anzeigen
-  async function updateDiscountUI() {
-    const annotated = await loadAnnotatedCart();
-    if (!annotated || !annotated.items) return;
-
-    annotated.items.forEach(item => {
-      const el = document.getElementById(`discount-${item.productId}`);
-      if (el && item.rabatt && item.discounted_unit_price < item.unit_price) {
-        el.textContent = `${item.discounted_unit_price.toFixed(2)} € (Treuebonus)`;
-        el.style.display = 'block';
-        el.style.color = '#dc2626';
-        el.style.fontWeight = 'bold';
-      }
-    });
-  }
-
-  // Initiale Anzeige der Rabatte
-  updateDiscountUI();
-
-  // Buy-Button Logik
+  // Buy-Button: Produkt zum Warenkorb hinzufügen
   document.addEventListener('click', async (e) => {
-    const btn = e.target.closest('.buy-btn');
-    if (!btn) return;
+    const buyBtn = e.target.closest('.buy-btn');
+    if (!buyBtn) return;
 
-    const productId = btn.dataset.productId;
-    const cart = await loadCart();
-    if (!cart) return;
-
-    const existing = cart.items.find(i => i.productId === productId);
-    const newQty = existing ? existing.quantity + 1 : 1;
-
+    const productId = buyBtn.dataset.productId;
+    
     try {
+      // Aktuelle Menge holen
+      const cartResponse = await fetch('http://localhost:8000/cart');
+      const cart = await cartResponse.json();
+      const existingItem = cart.items.find(item => item.productId === productId);
+      const newQuantity = existingItem ? existingItem.quantity + 1 : 1;
+
+      // Menge im Backend aktualisieren
       await fetch(`http://localhost:8000/cart/items/${productId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quantity: newQty })
+        body: JSON.stringify({ quantity: newQuantity })
       });
 
-      // Rabattpreise neu anzeigen
-      await updateDiscountUI();
+      // Rabatte neu anzeigen
+      await showDiscounts();
 
-      // Drawer über cartDrawer.js öffnen
+      // CartDrawer benachrichtigen
+      window.dispatchEvent(new CustomEvent('cartUpdated'));
+
+      // CartDrawer öffnen
       const drawer = document.getElementById('drawer');
-      if (drawer?.showModal) drawer.showModal();
+      if (drawer) drawer.showModal();
 
-    } catch (err) {
-      console.error('Fehler beim Hinzufügen zum Warenkorb:', err);
+    } catch (error) {
+      console.error('Fehler beim Hinzufügen zum Warenkorb:', error);
     }
   });
 });

@@ -1,13 +1,5 @@
 ---
-let items = [];
-let subtotal = 0;
-
-
-const res = await fetch('http://localhost:8000/cart/annotated');
-const data = await res.json();
-items = data.items ?? [];
-subtotal = items.reduce((sum, it) => sum + Number(it.line_total ?? 0), 0);
- 
+// CartDrawer - Einfach: Backend-Daten mappen und anzeigen
 ---
 
 <button id="open-drawer" class="open-drawer-btn">
@@ -34,54 +26,8 @@ subtotal = items.reduce((sum, it) => sum + Number(it.line_total ?? 0), 0);
 
           <div class="cart-items">
             <div class="items-container">
-              <ul role="list" class="items-list">
-                {items.map((item) => (
-                  <li class="cart-item" data-product-id={item.productId}>
-                    <div class="item-image">
-                      <img
-                        src="/assets/product-1.png"
-                        alt="Product image"
-                      />
-                    </div>
-
-                    <div class="item-details">
-                      <div>
-                        <div class="item-header">
-                          <h3><a href="#">{item.name || item.productId}</a></h3>
-                          <p class="item-price">
-                            {typeof item.price === 'number' ? `${item.price.toFixed(2)} €` : '-'}
-                          </p>
-                        </div>
-                        <p class="item-variant">{item.category || '—'} {item.rabatt ? '• Rabattfähig' : ''}</p>
-                      </div>
-                      <div class="item-footer">
-                        <div class="quantity-controls">
-                          <button type="button" class="quantity-btn" data-action="decrease" data-product-id={item.productId}>-</button>
-                          <span class="item-quantity">Qty {item.quantity ?? 1}</span>
-                          <button type="button" class="quantity-btn" data-action="increase" data-product-id={item.productId}>+</button>
-                        </div>
-                        <div class="item-actions">
-                          <button type="button" class="remove-button" data-product-id={item.productId}>Remove</button>
-                        </div>
-                      </div>
-                        <div class="line-total">
-                          <p class="original-total">
-                            Summe: {typeof item.line_total === 'number' ? `${item.line_total.toFixed(2)} €` : (typeof item.price === 'number' ? `${(item.price * item.quantity).toFixed(2)} €` : '-')}
-                          </p>
-                          {item.rabatt && item.line_total_discounted < item.line_total ? (
-                            <div class="discount-info">
-                              <p class="discounted-total">
-                                Rabattpreis: {item.line_total_discounted.toFixed(2)} €
-                              </p>
-                              <p class="savings">
-                                Ersparnis: {item.savings_total.toFixed(2)} €
-                              </p>
-                            </div>
-                          ) : null}
-                        </div>
-                    </div>
-                  </li>
-                ))}
+              <ul role="list" class="items-list" id="cart-items-list">
+                <!-- Items werden dynamisch geladen -->
               </ul>
             </div>
           </div>
@@ -89,20 +35,18 @@ subtotal = items.reduce((sum, it) => sum + Number(it.line_total ?? 0), 0);
           <div class="drawer-footer">
             <div class="subtotal">
               <p>Subtotal</p>
-              <p>{subtotal.toFixed(2)} €</p>
+              <p id="subtotal-amount">0.00 €</p>
             </div>
-            {items.some(item => item.rabatt && item.savings_total > 0) ? (
-              <div class="discount-summary">
+            <div class="discount-summary" id="discount-summary" style="display: none;">
                 <div class="subtotal-discounted">
                   <p>Rabattpreis</p>
-                  <p>{items.reduce((sum, item) => sum + (item.line_total_discounted || item.line_total), 0).toFixed(2)} €</p>
+                <p id="subtotal-discounted-amount">0.00 €</p>
                 </div>
                 <div class="total-savings">
                   <p>Gesamtersparnis</p>
-                  <p class="savings-amount">{items.reduce((sum, item) => sum + (item.savings_total || 0), 0).toFixed(2)} €</p>
-                </div>
+                <p class="savings-amount" id="total-savings-amount">0.00 €</p>
               </div>
-            ) : null}
+            </div>
             <p class="shipping-note">Shipping and taxes calculated at checkout.</p>
             <div class="checkout-section">
               <button type="button" class="checkout-button">Checkout</button>
@@ -125,6 +69,138 @@ subtotal = items.reduce((sum, it) => sum + Number(it.line_total ?? 0), 0);
 </dialog>
 
 <style>
+/* Global styles für dynamisch eingefügtes HTML */
+:global(.cart-item) {
+  display: flex;
+  padding: 24px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+:global(.item-image) {
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+:global(.item-image img) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+:global(.item-details) {
+  margin-left: 16px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+:global(.item-header) {
+  display: flex;
+  justify-content: space-between;
+  font-size: 16px;
+  font-weight: 500;
+  color: #111827;
+}
+
+:global(.item-header h3) {
+  margin: 0;
+}
+
+:global(.item-header h3 a) {
+  color: inherit;
+  text-decoration: none;
+}
+
+:global(.item-price) {
+  margin-left: 16px;
+  margin: 0;
+}
+
+:global(.item-variant) {
+  margin-top: 4px;
+  font-size: 14px;
+  color: #6b7280;
+  margin: 4px 0 0 0;
+}
+
+:global(.item-footer) {
+  display: flex;
+  flex: 1;
+  align-items: flex-end;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+:global(.item-quantity) {
+  color: #6b7280;
+  margin: 0;
+}
+
+:global(.quantity-controls) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:global(.quantity-btn) {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #d1d5db;
+  background-color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+:global(.quantity-btn:hover) {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+:global(.item-actions) {
+  display: flex;
+}
+
+:global(.remove-button) {
+  font-weight: 500;
+  color: #4f46e5;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+:global(.remove-button:hover) {
+  color: #4338ca;
+}
+
+:global(.discount-info) {
+  margin-top: 4px;
+}
+
+:global(.discounted-total) {
+  color: #dc2626;
+  font-weight: 600;
+  margin: 2px 0;
+  font-size: 14px;
+}
+
+:global(.savings) {
+  color: #059669;
+  font-weight: 600;
+  margin: 2px 0;
+  font-size: 14px;
+}
+
 /* Open Drawer Button */
 .open-drawer-btn {
   position: absolute;
@@ -568,152 +644,191 @@ subtotal = items.reduce((sum, it) => sum + Number(it.line_total ?? 0), 0);
 </style>
 
 <script>
-// API-Calls für CartDrawer
+/**
+ * CartDrawer - Client-Side Cart Management
+ * 
+ * Handles dynamic cart loading, quantity updates, and discount calculations.
+ * All data is fetched from the FastAPI backend and rendered client-side.
+ * 
+ * @author Novafon Development Team
+ * @version 1.0.0
+ */
+
 document.addEventListener('DOMContentLoaded', () => {
   
-  // Subtotal neu berechnen
-async function updateSubtotal() {
-  try {
-    const res = await fetch('http://localhost:8000/cart/annotated');
-    if (!res.ok) {
-      console.error('Fehler beim Abrufen des aktualisierten Warenkorbs');
-      return;
-    }
-
-    const data = await res.json();
-    const items = data.items;
-
-    // Update Summe
-    const subtotalEl = document.querySelector('.subtotal p:last-child');
-    if (subtotalEl) {
-      subtotalEl.textContent = `${data.subtotal.toFixed(2)} €`;
-    }
-
-    // Rabattpreis
-    const discountedEl = document.querySelector('.subtotal-discounted p:last-child');
-    if (discountedEl) {
-      discountedEl.textContent = `${data.subtotal_discounted.toFixed(2)} €`;
-    }
-
-    // Ersparnis
-    const savingsEl = document.querySelector('.savings-amount');
-    if (savingsEl) {
-      savingsEl.textContent = `${data.total_savings.toFixed(2)} €`;
-    }
-
-  } catch (err) {
-    console.error("Update subtotal failed:", err);
-  }
-}
-
-async function updateItemLines() {
-  try {
-    const res = await fetch('http://localhost:8000/cart/annotated');
-    if (!res.ok) return;
-
-    const data = await res.json();
-
-    data.items.forEach(item => {
-      const el = document.querySelector(`.cart-item[data-product-id="${item.productId}"]`);
-      if (!el) return;
-
-      // Summe (Originalpreis)
-      const originalEl = el.querySelector('.original-total');
-      if (originalEl) {
-        originalEl.textContent = `Summe: ${item.line_total.toFixed(2)} €`;
-      }
-
-      // Rabattbereich
-      const discountEl = el.querySelector('.discount-info');
-      if (discountEl && item.rabatt && item.savings_total > 0) {
-        const discountedEl = discountEl.querySelector('.discounted-total');
-        const savingsEl = discountEl.querySelector('.savings');
-
-        if (discountedEl) {
-          discountedEl.textContent = `Rabattpreis: ${item.line_total_discounted.toFixed(2)} €`;
-        }
-        if (savingsEl) {
-          savingsEl.textContent = `Ersparnis: ${item.savings_total.toFixed(2)} €`;
-        }
-
-        discountEl.style.display = ''; // sicherstellen, dass sichtbar
-      } else if (discountEl) {
-        discountEl.style.display = 'none'; // ausblenden, wenn nicht rabattfähig
-      }
-    });
-  } catch (err) {
-    console.error("updateItemLines failed:", err);
-  }
-}
-
-  
-  // Quantity Buttons
-  document.addEventListener('click', async (e) => {
-    if (e.target.classList.contains('quantity-btn')) {
-      const action = e.target.dataset.action;
-      const productId = e.target.dataset.productId;
+  /**
+   * Loads cart data from backend and renders the cart items
+   * 
+   * Fetches annotated cart data including discounts and renders all items
+   * with their quantities, prices, and discount information. Updates the
+   * subtotal and discount summary sections.
+   * 
+   * @async
+   * @function loadCart
+   * @returns {Promise<void>}
+   * @throws {Error} If API call fails or data parsing fails
+   * @example
+   * // Load and display current cart
+   * await loadCart();
+   */
+  async function loadCart() {
+    try {
+      // Fetch annotated cart data from FastAPI backend
+      const res = await fetch('http://localhost:8000/cart/annotated');
+      const data = await res.json();
       
-      // Aktuellen Warenkorb holen
+      // Get cart items container and render items with innerHTML
+      const container = document.getElementById('cart-items-list');
+      container.innerHTML = data.items.map(item => `
+        <li class="cart-item" data-product-id="${item.productId}">
+          <div class="item-image">
+            <img src="/assets/product-1.png" alt="Product image" />
+          </div>
+          <div class="item-details">
+            <div>
+              <div class="item-header">
+                <h3><a href="#">${item.name || item.productId}</a></h3>
+                <p class="item-price">${item.unit_price.toFixed(2)} €</p>
+              </div>
+              <p class="item-variant">${item.category || '—'} ${item.rabatt ? '• Rabattfähig' : ''}</p>
+            </div>
+            <div class="item-footer">
+              <div class="quantity-controls">
+                <button type="button" class="quantity-btn" data-action="decrease" data-product-id="${item.productId}">-</button>
+                <span class="item-quantity">Qty ${item.quantity}</span>
+                <button type="button" class="quantity-btn" data-action="increase" data-product-id="${item.productId}">+</button>
+              </div>
+              <div class="item-actions">
+                <button type="button" class="remove-button" data-product-id="${item.productId}">Remove</button>
+              </div>
+            </div>
+            <div class="line-total">
+              <p class="original-total">Summe: ${item.line_total.toFixed(2)} €</p>
+              ${item.rabatt && item.line_total_discounted < item.line_total ? `
+                <div class="discount-info">
+                  <p class="discounted-total">Rabattpreis: ${item.line_total_discounted.toFixed(2)} €</p>
+                  <p class="savings">Ersparnis: ${item.savings_total.toFixed(2)} €</p>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        </li>
+      `).join('');
+      
+      // Update subtotal display
+      document.getElementById('subtotal-amount').textContent = `${data.subtotal.toFixed(2)} €`;
+      
+      // Handle discount summary visibility and values
+      const discountSummary = document.getElementById('discount-summary');
+      const hasDiscounts = data.items.some(item => item.rabatt && item.savings_total > 0);
+      
+      if (hasDiscounts) {
+        discountSummary.style.display = 'block';
+        document.getElementById('subtotal-discounted-amount').textContent = `${data.subtotal_discounted.toFixed(2)} €`;
+        document.getElementById('total-savings-amount').textContent = `${data.total_savings.toFixed(2)} €`;
+      } else {
+        discountSummary.style.display = 'none';
+      }
+      
+    } catch (err) {
+      console.error("Fehler beim Laden des Warenkorbs:", err);
+    }
+  }
+
+  /**
+   * Calculate new quantity based on action type
+   * 
+   * Determines the new quantity for a product based on the action
+   * (increase/decrease) and current cart state.
+   * 
+   * @async
+   * @function calculateNewQuantity
+   * @param {string} productId - The product ID to update
+   * @param {string} action - The action to perform ('increase' or 'decrease')
+   * @returns {Promise<number>} The new quantity for the product
+   * @throws {Error} If API call fails
+   * @example
+   * // Increase quantity by 1
+   * const newQty = await calculateNewQuantity('P101', 'increase');
+   */
+  async function calculateNewQuantity(productId, action) {
       const response = await fetch('http://localhost:8000/cart');
       const cart = await response.json();
-      
-      // Item finden
-      const item = cart.items.find(item => item.productId === productId);
-      if (!item) return;
-      
-      // Menge ändern
-      let newQuantity = item.quantity;
-      if (action === 'increase') {
-        newQuantity += 1;
-      } else if (action === 'decrease' && item.quantity > 1) {
-        newQuantity -= 1;
-      }
-      
-      // Backend aktualisieren
+    const item = cart.items.find(i => i.productId === productId);
+    const currentQuantity = item?.quantity || 0;
+    
+    if (action === 'increase') {
+      return currentQuantity + 1;
+    } else if (action === 'decrease') {
+      return Math.max(0, currentQuantity - 1);
+    }
+    
+    return currentQuantity;
+  }
+
+  /**
+   * Update product quantity in backend
+   * 
+   * Sends a PUT request to update the quantity of a specific product
+   * in the cart. Quantity of 0 removes the item from cart.
+   * 
+   * @async
+   * @function updateProductQuantity
+   * @param {string} productId - The product ID to update
+   * @param {number} newQuantity - The new quantity (0 = remove)
+   * @returns {Promise<void>}
+   * @throws {Error} If API call fails
+   * @example
+   * // Set quantity to 2
+   * await updateProductQuantity('P101', 2);
+   * 
+   * // Remove item from cart
+   * await updateProductQuantity('P101', 0);
+   */
+  async function updateProductQuantity(productId, newQuantity) {
       await fetch(`http://localhost:8000/cart/items/${productId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ quantity: newQuantity })
       });
-      
-      // Live Update ohne Reload
-      const cartItem = e.target.closest('.cart-item');
-      const quantitySpan = cartItem?.querySelector('.item-quantity');
-      if (quantitySpan) {
-        quantitySpan.textContent = `Qty ${newQuantity}`;
-      }
-      
-      // Subtotal neu berechnen
-      updateSubtotal();
-      updateItemLines();
-    }
-  });
+  }
 
-  // Remove Button
+  // Initialize cart on page load
+  loadCart();
+
+  /**
+   * Event listener for external cart updates
+   * 
+   * Listens for 'cartUpdated' events from other components (like ProductSection)
+   * and reloads the cart to reflect changes.
+   */
+  window.addEventListener('cartUpdated', loadCart);
+
+  /**
+   * Event listener for cart item interactions
+   * 
+   * Handles clicks on quantity buttons (+/-) and remove buttons.
+   * Updates the backend and refreshes the cart display without
+   * closing the drawer.
+   * 
+   * @param {Event} e - The click event
+   */
   document.addEventListener('click', async (e) => {
-    if (e.target.classList.contains('remove-button')) {
+    // Check if clicked element is a cart control button
+    if (e.target.classList.contains('quantity-btn') || e.target.classList.contains('remove-button')) {
       const productId = e.target.dataset.productId;
+      const action = e.target.dataset.action;
       
-      // Backend: Menge auf 0 setzen = entfernen
-      await fetch(`http://localhost:8000/cart/items/${productId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quantity: 0 })
-      });
+      // Calculate new quantity based on action
+      const newQuantity = await calculateNewQuantity(productId, action);
       
-      // Item aus DOM entfernen
-      const cartItem = e.target.closest('.cart-item');
-      if (cartItem) {
-        cartItem.remove();
-      }
+      // Update backend with new quantity
+      await updateProductQuantity(productId, newQuantity);
       
-      // Subtotal neu berechnen
-      updateSubtotal();
-      updateItemLines();
+      // Reload cart display (drawer stays open)
+      loadCart();
     }
   });
-
-  // Calculate Discount - wird automatisch in /cart/annotated berechnet
 
 });
 </script>
