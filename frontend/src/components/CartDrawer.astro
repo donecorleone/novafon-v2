@@ -736,63 +736,39 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * Calculate new quantity based on action type
-   * 
-   * Determines the new quantity for a product based on the action
-   * (increase/decrease) and current cart state.
-   * 
-   * @async
-   * @function calculateNewQuantity
-   * @param {string} productId - The product ID to update
-   * @param {string} action - The action to perform ('increase' or 'decrease')
-   * @returns {Promise<number>} The new quantity for the product
-   * @throws {Error} If API call fails
-   * @example
-   * // Increase quantity by 1
-   * const newQty = await calculateNewQuantity('P101', 'increase');
-   */
-  async function calculateNewQuantity(productId, action) {
-      const response = await fetch('http://localhost:8000/cart');
-      const cart = await response.json();
-    const item = cart.items.find(i => i.productId === productId);
-    const currentQuantity = item?.quantity || 0;
-    
-    if (action === 'increase') {
-      return currentQuantity + 1;
-    } else if (action === 'decrease') {
-      return Math.max(0, currentQuantity - 1);
-    } else if (action === 'remove') {
-      return 0; // Remove = Menge auf 0 setzen
-    }
-    
-    return currentQuantity;
-  }
-
-  /**
    * Update product quantity in backend
    * 
-   * Sends a PUT request to update the quantity of a specific product
-   * in the cart. Quantity of 0 removes the item from cart.
+   * Backend macht alle Berechnungen - Frontend nur API-Calls
    * 
    * @async
    * @function updateProductQuantity
    * @param {string} productId - The product ID to update
-   * @param {number} newQuantity - The new quantity (0 = remove)
+   * @param {string} action - The action ('increase', 'decrease', 'remove')
    * @returns {Promise<void>}
    * @throws {Error} If API call fails
-   * @example
-   * // Set quantity to 2
-   * await updateProductQuantity('P101', 2);
-   * 
-   * // Remove item from cart
-   * await updateProductQuantity('P101', 0);
    */
-  async function updateProductQuantity(productId, newQuantity) {
-      await fetch(`http://localhost:8000/cart/items/${productId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quantity: newQuantity })
-      });
+  async function updateProductQuantity(productId, action) {
+    // Aktuelle Menge holen
+    const cartResponse = await fetch('http://localhost:8000/cart');
+    const cart = await cartResponse.json();
+    const item = cart.items.find(i => i.productId === productId);
+    const currentQuantity = item?.quantity || 0;
+    
+    let newQuantity = currentQuantity;
+    if (action === 'increase') {
+      newQuantity = currentQuantity + 1;
+    } else if (action === 'decrease') {
+      newQuantity = Math.max(0, currentQuantity - 1);
+    } else if (action === 'remove') {
+      newQuantity = 0;
+    }
+    
+    // Backend macht alle Berechnungen - nur Menge setzen
+    await fetch(`http://localhost:8000/cart/items/${productId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantity: newQuantity })
+    });
   }
 
   // Initialize cart on page load
@@ -821,11 +797,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const productId = e.target.dataset.productId;
       const action = e.target.dataset.action;
       
-      // Calculate new quantity based on action
-      const newQuantity = await calculateNewQuantity(productId, action);
-      
-      // Update backend with new quantity
-      await updateProductQuantity(productId, newQuantity);
+      // Backend macht alles - nur API-Call
+      await updateProductQuantity(productId, action);
       
       // Reload cart display (drawer stays open)
       loadCart();

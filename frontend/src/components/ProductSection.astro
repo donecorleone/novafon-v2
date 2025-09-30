@@ -54,12 +54,14 @@ try {
 // Super einfach: Nur Buy-Button funktionalität
 document.addEventListener('DOMContentLoaded', () => {
   
-  // Rabattpreise anzeigen (vom Backend)
+  // Rabattpreise direkt vom Backend holen
   async function showDiscounts() {
     try {
+      // Annotierten Warenkorb holen - Backend berechnet discounted_unit_price für alle Produkte
       const response = await fetch('http://localhost:8000/cart/annotated');
       const data = await response.json();
       
+      // Alle Items durchgehen und Rabattpreise anzeigen
       data.items.forEach(item => {
         const discountEl = document.getElementById(`discount-${item.productId}`);
         if (discountEl && item.rabatt && item.discounted_unit_price < item.unit_price) {
@@ -85,13 +87,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const productId = buyBtn.dataset.productId;
     
     try {
-      // Aktuelle Menge holen
+      // Aktuelle Menge holen und +1 hinzufügen
       const cartResponse = await fetch('http://localhost:8000/cart');
       const cart = await cartResponse.json();
       const existingItem = cart.items.find(item => item.productId === productId);
       const newQuantity = existingItem ? existingItem.quantity + 1 : 1;
 
-      // Menge im Backend aktualisieren
+      // Backend macht alle Berechnungen - nur Menge setzen
       await fetch(`http://localhost:8000/cart/items/${productId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
