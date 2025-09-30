@@ -1,14 +1,6 @@
 [
   {
-    "productId": "P101",
-    "quantity": 11
-  },
-  {
     "productId": "P200",
-    "quantity": 2
-  },
-  {
-    "productId": "P100",
-    "quantity": 11
+    "quantity": 12
   }
 ]
