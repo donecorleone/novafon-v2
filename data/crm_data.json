@@ -1,0 +1,17 @@
+[
+  {
+    "customerId": "C1001",
+    "orders": [
+      {"orderId": "O10001", "date": "2025-01-15", "total": 200.00},
+      {"orderId": "O10002", "date": "2025-03-10", "total": 500.50},
+      {"orderId": "O10003", "date": "2025-06-21", "total": 500.00}
+    ]
+  },
+  {
+    "customerId": "C1002",
+    "orders": [
+      {"orderId": "O10004", "date": "2025-02-12", "total": 300.00},
+      {"orderId": "O10005", "date": "2025-07-01", "total": 550.00}
+    ]
+  }
+]

@@ -1,0 +1,5 @@
+[
+  {"productId": "P100", "name": "Massagegerät A", "category": "Promo", "stock": 12, "price": 199.99},
+  {"productId": "P101", "name": "Massagegerät B", "category": "Promo", "stock": 3, "price": 249.99},
+  {"productId": "P200", "name": "Zubehör X", "category": "Standard", "stock": 50, "price": 19.99},
+]

@@ -1,0 +1,174 @@
+---
+let products = [];
+
+const response = await fetch('http://localhost:8000/products');
+const data = await response.json();
+products = data.map(([_, productId, name, category, stock, price]) => ({
+  productId,
+  name,
+  category,
+  stock,
+  price
+}));
+
+
+---
+
+<div class="w-full min-h-screen flex justify-center items-center">
+  <div class="flex flex-wrap gap-5">
+    {products.map((product) => (
+      <div class="product w-[400px] h-fit rounded-3xl flex flex-col overflow-hidden">
+        <div class="img-container w-full h-[370px]">
+          <img src="/assets/product-1.png" alt={product.name} />
+        </div>
+        <div class="content-container w-full h-[320px]">
+          <h3 class="mb-5"><b>{product.name}</b></h3>
+          <p class="product-details">
+            5 Intensitätsstufen<br />
+            3 Frequenzen (50, 70 % 100 Hz)<br />
+            App Connectivity
+          </p>
+          <div class="price-containe flex flex-row">
+            <p class="price">
+              {typeof product.price === 'number' ? `${product.price.toFixed(2)} €` : '-'}
+            </p>
+            <p class="discount-price" id={`discount-${product.productId}`} style="display: none;"></p>
+          </div>
+          <div class="flex flex-row justify-between">
+            <button>Zum Produkt</button>
+            <button class="buy-btn" data-product-id={product.productId}>
+              <img src="/assets/shopping-cart.webp" alt="shopping cart icon" class="max-h-[30px] w-auto" />
+            </button>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  async function loadCart() {
+    try {
+      const res = await fetch('http://localhost:8000/cart');
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (err) {
+      console.error('Fehler beim Laden des Warenkorbs:', err);
+      return null;
+    }
+  }
+
+  async function loadAnnotatedCart() {
+    try {
+      const res = await fetch('http://localhost:8000/cart/annotated');
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (err) {
+      console.error('Fehler beim Laden des annotierten Warenkorbs:', err);
+      return null;
+    }
+  }
+
+  // Live Rabattpreise anzeigen
+  async function updateDiscountUI() {
+    const annotated = await loadAnnotatedCart();
+    if (!annotated || !annotated.items) return;
+
+    annotated.items.forEach(item => {
+      const el = document.getElementById(`discount-${item.productId}`);
+      if (el && item.rabatt && item.discounted_unit_price < item.unit_price) {
+        el.textContent = `${item.discounted_unit_price.toFixed(2)} € (Treuebonus)`;
+        el.style.display = 'block';
+        el.style.color = '#dc2626';
+        el.style.fontWeight = 'bold';
+      }
+    });
+  }
+
+  // Initiale Anzeige der Rabatte
+  updateDiscountUI();
+
+  // Buy-Button Logik
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.buy-btn');
+    if (!btn) return;
+
+    const productId = btn.dataset.productId;
+    const cart = await loadCart();
+    if (!cart) return;
+
+    const existing = cart.items.find(i => i.productId === productId);
+    const newQty = existing ? existing.quantity + 1 : 1;
+
+    try {
+      await fetch(`http://localhost:8000/cart/items/${productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity: newQty })
+      });
+
+      // Rabattpreise neu anzeigen
+      await updateDiscountUI();
+
+      // Drawer über cartDrawer.js öffnen
+      const drawer = document.getElementById('drawer');
+      if (drawer?.showModal) drawer.showModal();
+
+    } catch (err) {
+      console.error('Fehler beim Hinzufügen zum Warenkorb:', err);
+    }
+  });
+});
+</script>
+
+
+<style>
+  .content-container {
+    padding: 40px 20px;
+    background-color: white;
+  }
+
+  .img-container {
+    background-image: linear-gradient(to bottom, #bdc2c9, #ced1d6, #dfe0e4, #efeff1, #ffffff);
+  }
+
+  .product-details {
+    margin: 15px 0 40px 0;
+  }
+
+  .price-container {
+    margin: 20px 0;
+  }
+
+  .price {
+    font-size: 24px;
+    margin: 0;
+  }
+
+  .discount-price {
+    font-size: 16px;
+    margin-left: 20px;
+    margin-top: 5px;
+    font-weight: 200;
+  }
+
+  .buy-btn {
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+  }
+
+  .buy-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  @media screen and (max-width: 669px) {
+    .product {
+      max-width: 370px;
+    }
+  }
+</style>

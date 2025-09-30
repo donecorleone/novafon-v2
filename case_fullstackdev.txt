@@ -1,0 +1,106 @@
+
+# Coding Case: Kampagnenbasierte Rabatt- & Bestandslogik
+
+**Ziel:**  
+Testen Sie Ihre Fähigkeit, komplexere E-Commerce-Geschäftslogik aus mehreren Quellen zu verarbeiten und in einem kleinen, sauberen Full-Stack-Projekt umzusetzen.
+
+---
+
+## Hintergrund
+Ihr Online-Shop plant eine Sonderaktion:  
+- Kunden mit einem Jahresumsatz ≥ 1.000 € bekommen 10 % Rabatt auf Produkte einer Aktionskategorie („Promo“).
+- Die Produkte sind lagerbegrenzt. Wenn der Bestand < 5 Stück liegt, wird der Rabatt automatisch deaktiviert.
+- Der Umsatz eines Kunden wird über ein CRM (per API) bereitgestellt.
+- Produktdaten inkl. Kategorie & Lagerbestand kommen aus dem Shop (per API).
+
+---
+
+## Aufgabe
+Erstellen Sie eine Anwendung (CLI oder Web-API), die folgende Funktionen erfüllt:
+
+### 1. **Kundenüberprüfung**
+- Laden Sie die Bestellungen eines Kunden aus der CRM-Mock-API.
+- Berechnen Sie den Gesamtumsatz im Jahr 2025.
+- Prüfen Sie, ob der Kunde rabattberechtigt ist (>= 1.000 € Umsatz).
+
+### 2. **Produktprüfung & Rabattberechnung**
+- Laden Sie Produktdaten aus der Shop-Mock-API.
+- Prüfen Sie für jedes Produkt im gegebenen Warenkorb:
+  - Gehört es zur Kategorie „Promo“?
+  - Hat es Bestand ≥ 5?
+- Wenn ja, gewähren Sie 10 % Rabatt.
+- Andernfalls bleibt der Originalpreis bestehen.
+
+### 3. **Warenkorb-Ausgabe**
+- Für eine simulierte Warenkorbliste (siehe unten):
+  - Geben Sie Originalpreis, Rabattpreis und Begründung je Position aus.
+  - Zeigen Sie die Gesamtsumme.
+
+### 4. **Optionales Frontend**
+- Einfaches Web-UI, in dem man Kundennummer + Warenkorb eingeben kann.
+
+---
+
+## Simulierte APIs
+
+### CRM API (`crm_data.json`)
+```json
+[
+  {
+    "customerId": "C1001",
+    "orders": [
+      {"orderId": "O10001", "date": "2025-01-15", "total": 200.00},
+      {"orderId": "O10002", "date": "2025-03-10", "total": 500.50},
+      {"orderId": "O10003", "date": "2025-06-21", "total": 500.00}
+    ]
+  },
+  {
+    "customerId": "C1002",
+    "orders": [
+      {"orderId": "O10004", "date": "2025-02-12", "total": 300.00},
+      {"orderId": "O10005", "date": "2025-07-01", "total": 550.00}
+    ]
+  }
+]
+```
+
+### Shop API (`shop_data.json`)
+```json
+[
+  {"productId": "P100", "name": "Massagegerät A", "category": "Promo", "stock": 12, "price": 199.99},
+  {"productId": "P101", "name": "Massagegerät B", "category": "Promo", "stock": 3, "price": 249.99},
+  {"productId": "P200", "name": "Zubehör X", "category": "Standard", "stock": 50, "price": 19.99}
+]
+```
+
+### Beispiel-Warenkorb
+```json
+[
+  {"productId": "P100", "quantity": 1},
+  {"productId": "P101", "quantity": 1},
+  {"productId": "P200", "quantity": 2}
+]
+```
+
+---
+
+## Anforderungen
+- Umsetzung in einer Sprache Ihrer Wahl
+- Fokus auf saubere Code-Struktur, klare Geschäftslogik und dokumentierte Entscheidungswege
+- README mit Architektur & Startanleitung
+- Bonus: Unit-Tests, Dockerfile, einfaches UI
+
+---
+
+## Abgabe
+- GitHub-/GitLab-Repo oder ZIP-Archiv
+- README-Datei enthalten
+- Erwarteter Zeitaufwand: ca. 4–6 Stunden
+
+---
+
+## Bewertungskriterien
+- Korrektheit & Vollständigkeit der Rabattlogik
+- Code-Organisation & Architektur
+- Fehlerbehandlung & Nachvollziehbarkeit
+- Dokumentation & Lesbarkeit
