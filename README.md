@@ -1,29 +1,33 @@
 # Novafon Case - E-Commerce Application
 
-A modern e-commerce application built with FastAPI (backend) and Astro (frontend), featuring customer loyalty discounts, real-time cart updates, and Docker containerization.
+A comprehensive e-commerce application built with FastAPI (backend) and Astro (frontend), featuring an advanced customer loyalty discount system, real-time shopping cart management, and seamless customer account switching.
 
 ## Features
 
-- **Product Catalog**: Display products with real-time pricing
-- **Shopping Cart**: Live updates with quantity management
-- **Customer Loyalty System**: Automatic discount calculation for VIP customers
-- **Multi-Customer Support**: Switch between different customer accounts
-- **Responsive Design**: Modern UI with Tailwind CSS
-- **Docker Ready**: Complete containerization setup
+- **Product Catalog Management**: SQLite-based product database with real-time pricing display
+- **Advanced Shopping Cart**: Live updates with quantity management and instant discount calculation
+- **VIP Customer Loyalty System**: Automatic 10% discount calculation for eligible customers on promotional products
+- **Multi-Customer Support**: Dynamic customer ID switching with cart isolation between accounts
+- **Real-time Discount Engine**: Backend-calculated pricing with frontend display of original, discounted, and savings amounts
+- **Responsive Design**: Modern UI with Tailwind CSS and mobile-first approach
+- **Docker Containerization**: Complete deployment-ready setup with multi-stage builds
 
 ## Architecture
 
 ### Backend (FastAPI)
-- **Framework**: FastAPI with Python 3.11
-- **Database**: SQLite3 with JSON data files
-- **API Endpoints**: RESTful API for products, cart, and customer management
-- **Discount Engine**: Automatic VIP customer discount calculation
+- **Framework**: FastAPI with Python 3.11 and automatic API documentation
+- **Database**: SQLite3 with JSON data persistence for cart and CRM data
+- **API Design**: RESTful API with comprehensive error handling and CORS support
+- **Discount Engine**: Real-time VIP customer discount calculation with 10% reduction on promotional products
+- **Customer Management**: CRM integration with order history and loyalty status tracking
+- **Data Persistence**: File-based storage for shopping cart and customer data with atomic operations
 
 ### Frontend (Astro)
-- **Framework**: Astro with TypeScript
-- **Styling**: Tailwind CSS
-- **Real-time Updates**: Client-side cart management
-- **Customer Selection**: Dynamic customer ID switching
+- **Framework**: Astro with TypeScript for static site generation and client-side hydration
+- **Styling**: Tailwind CSS with custom component styling and responsive design
+- **Real-time Updates**: Client-side cart management with live discount calculation display
+- **Customer Selection**: Dynamic customer ID switching with automatic cart clearing between sessions
+- **Component Architecture**: Modular design with ProductSection and CartDrawer components
 
 ## Prerequisites
 
@@ -77,38 +81,51 @@ A modern e-commerce application built with FastAPI (backend) and Astro (frontend
 
 ### Customer Selection
 When you first load the application, you'll be prompted to select a customer:
-- **C1001**: VIP customer with loyalty discounts
-- **C1002**: Regular customer
-- **Enter**: Defaults to C1001
+- **C1001**: VIP customer with loyalty discounts (total orders > €1000)
+- **C1002**: Regular customer without discount eligibility
+- **Enter**: Defaults to C1001 for demonstration purposes
 
 ### Shopping Experience
-1. **Browse Products**: View available products with pricing
-2. **Add to Cart**: Click the shopping cart icon to add items
-3. **View Cart**: Click the cart button in the top-right corner
-4. **Manage Quantities**: Use +/- buttons or remove items
-5. **See Discounts**: VIP customers automatically receive 10% discounts on eligible products
+1. **Browse Products**: View available products with real-time pricing from SQLite database
+2. **Add to Cart**: Click the shopping cart icon to add items with automatic quantity calculation
+3. **View Cart**: Click the cart button in the top-right corner to open the modal drawer
+4. **Manage Quantities**: Use +/- buttons for precise quantity control or remove items entirely
+5. **See Discounts**: VIP customers automatically receive 10% discounts on promotional products with stock >= 5
 
 ### Cart Features
-- **Live Updates**: Cart updates in real-time without page refresh
-- **Discount Display**: Shows original price, discounted price, and savings
-- **Quantity Management**: Increase, decrease, or remove items
-- **Customer-Specific**: Cart is cleared when switching customers
+- **Live Updates**: Cart updates in real-time without page refresh using innerHTML rendering
+- **Comprehensive Discount Display**: Shows original price, discounted unit price, line totals, and total savings
+- **Advanced Quantity Management**: Increase, decrease, or remove items with backend synchronization
+- **Customer-Specific Isolation**: Cart is automatically cleared when switching customers to prevent data mixing
+- **Discount Summary**: Aggregated view of total savings and discounted subtotal for eligible items
 
 ## API Endpoints
 
 ### Products
-- `GET /products` - Get all products
-- `GET /products/{product_id}` - Get specific product
+- `GET /products` - Retrieve all products from SQLite database with ID, name, category, stock, and pricing
+- `GET /products/{product_id}` - Get specific product details by ID
 
-### Cart
-- `GET /cart` - Get current cart contents
-- `PUT /cart` - Update entire cart
-- `PUT /cart/items/{product_id}` - Update specific item quantity
-- `GET /cart/annotated` - Get cart with discount calculations
+### Cart Management
+- `GET /cart` - Get current cart contents with product IDs and quantities
+- `PUT /cart` - Update entire cart with new items array (used for cart clearing)
+- `PUT /cart/items/{product_id}` - Update specific item quantity with automatic discount recalculation
+- `GET /cart/annotated?customer_id={id}` - Get cart with comprehensive discount calculations including:
+  - Original and discounted unit prices
+  - Line totals with and without discounts
+  - Individual item savings calculations
+  - Aggregated subtotal, discounted subtotal, and total savings
 
-### Customer
-- `GET /customer/{customer_id}/orders` - Get customer order history
-- `GET /customer/{customer_id}/discount` - Get customer discount eligibility
+### Customer Management
+- `GET /customer/{customer_id}/orders` - Get complete customer order history from CRM database
+- `GET /customer/{customer_id}/discount` - Get customer discount eligibility based on total order value
+- `GET /orders` - Retrieve all orders from the system
+
+### Discount Engine
+The `/cart/annotated` endpoint performs sophisticated discount calculations:
+- **VIP Status Check**: Determines customer eligibility based on total order history
+- **Product Eligibility**: Only promotional products with stock >= 5 are discountable
+- **Discount Calculation**: 10% reduction applied to eligible products for VIP customers
+- **Real-time Pricing**: All calculations performed server-side for consistency
 
 ## Data Structure
 
@@ -140,18 +157,28 @@ When you first load the application, you'll be prompted to select a customer:
 ## Frontend Components
 
 ### ProductSection.astro
-- Displays product catalog
-- Handles add-to-cart functionality
-- Shows discount prices for VIP customers
+- **Product Catalog Display**: Renders all products from backend API with SSR data fetching
+- **Add-to-Cart Functionality**: Handles product addition with quantity calculation and backend synchronization
+- **Discount Price Display**: Shows VIP customer discount prices using `discounted_unit_price` from annotated cart
+- **Real-time Updates**: Refreshes discount display after cart modifications
 
 ### CartDrawer.astro
-- Modal shopping cart interface
-- Real-time quantity updates
-- Discount summary display
+- **Modal Shopping Cart Interface**: Slide-out drawer with backdrop and focus management
+- **Dynamic Cart Rendering**: Uses innerHTML for real-time item display with comprehensive discount information
+- **Advanced Quantity Management**: Increase/decrease/remove buttons with event delegation
+- **Discount Summary Display**: Shows aggregated savings and discounted subtotal for eligible items
+- **Customer-Specific Data**: All API calls include customer_id parameter for proper isolation
 
 ### Customer Management
-- `customerId.js`: Handles customer selection and cart clearing
-- `cartDrawer.js`: Basic modal functionality
+- **customerId.js**: Handles customer selection via prompt and global storage, automatically clears cart on reload
+- **cartDrawer.js**: Basic modal functionality for opening/closing drawer with backdrop click handling
+
+### Cart Logic Implementation
+The CartDrawer component implements sophisticated cart management:
+- **Real-time Loading**: `loadCart()` function fetches annotated cart data and renders items dynamically
+- **Discount Display**: Shows original price, discounted price, and savings per item with conditional rendering
+- **Quantity Updates**: `updateProductQuantity()` handles backend synchronization with proper error handling
+- **Event Delegation**: Single event listener handles all cart interactions for optimal performance
 
 ## Docker Configuration
 
@@ -246,6 +273,45 @@ novafon-case-neu/
 
 This project is licensed under the MIT License.
 
+## Technical Implementation Details
+
+### Backend Discount Logic
+The FastAPI backend implements a sophisticated discount calculation system in the `cart_annotated` endpoint:
+
+1. **Customer VIP Status Determination**: 
+   - Retrieves customer order history from CRM database
+   - Calculates total order value across all historical orders
+   - Determines VIP status based on configurable threshold (default: €1000+)
+
+2. **Product Eligibility Assessment**:
+   - Identifies promotional products from product database
+   - Validates stock levels (minimum 5 units required for discount eligibility)
+   - Creates discountable product set for efficient lookup
+
+3. **Real-time Price Calculation**:
+   - Applies 10% discount to eligible products for VIP customers
+   - Calculates line totals with and without discounts
+   - Computes individual and aggregate savings amounts
+   - Ensures all monetary values are properly rounded to 2 decimal places
+
+### Frontend Cart Management
+The Astro frontend implements real-time cart updates using modern web technologies:
+
+1. **Dynamic Content Rendering**:
+   - Uses innerHTML for efficient DOM updates without full page reloads
+   - Implements event delegation for optimal performance with dynamic content
+   - Provides comprehensive error handling for network failures
+
+2. **Customer Session Management**:
+   - Global customer ID storage using `window.customerId`
+   - Automatic cart clearing on customer switch to prevent data mixing
+   - Persistent customer selection across component interactions
+
+
+
+## Author
+
+**Max Hersam** -
+
 ## Support
 
-For support and questions, please contact the development team.
